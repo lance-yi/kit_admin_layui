@@ -1,0 +1,139 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">渠道结算</div>
+    <div class="layui-card-body">
+      <div id="piglist-search-box" class="search-box layui-form height-type2">
+        <div class="layui-inline">
+          <div class="input-tiele">用户名：</div>
+          <div class="layui-input-inline">
+            <input type="text" name="userName" id="userName" lay-filter="userName" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <div class="input-tiele">手机号：</div>
+          <div class="layui-input-inline">
+            <input type="text" name="userPhone" id="userPhone" lay-filter="userPhone" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <button class="layui-btn special-btn2" id="deallogSearch" data-type="reload">查询</button>
+      </div>
+
+
+      <form class="layui-form layui-form-pane">
+        <div class="layui-form-item">
+          <div class="layui-inline">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+              <input type="text" name="resName" id="resName" autocomplete="off" class="layui-input" disabled>
+            </div>
+          </div>
+          <div class="layui-inline">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-inline">
+              <input type="text" name="resPhone" id="resPhone" autocomplete="off" class="layui-input" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-inline">
+            <label class="layui-form-label">注册时间</label>
+            <div class="layui-input-block">
+              <input type="text" name="resTime" id="resTime" autocomplete="off" class="layui-input" disabled>
+            </div>
+          </div>
+          <div class="layui-inline">
+            <label class="layui-form-label">是否是渠道用户</label>
+            <div class="layui-input-inline">
+              <input type="text" name="resIsQD" id="resIsQD" autocomplete="off" class="layui-input" disabled>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  //Demo
+  layui.config({
+    base: './js/'
+  }).use(['jquery', 'api', 'form'], function () {
+    var $ = layui.jquery,
+      Api = layui.api,
+      form = layui.form,
+      layer = layui.layer;
+
+
+    // 查询
+    $("#deallogSearch").click(function (e) {
+      e.preventDefault();
+      var param = {
+        token: token,
+        realName: $("#userName").val(),
+        phone: $("#userPhone").val()
+      }
+      $.ajax({
+        type: "post",
+        url: Api.interface.enterpriseAdvisor,
+        data: JSON.stringify(param),
+        dataType: "json",
+        contentType: 'application/json; charset=UTF-8',
+        success: function (res) {
+          if (res.status == 200) {
+            $("#resPhone").val(res.data.phone);
+            $("#resName").val(res.data.realName);
+            $("#resIsQD").val(res.data.isPromotion);
+            $("#resTime").val(createTime(res.data.createTime));
+          } else if (res.status == 401) {
+            layer.msg(res.msg);
+            setTimeout(() => {
+              window.location.href = "/temp/login.html"
+            }, 1000);
+          } else if (res.status == 402) {
+            layer.msg(res.msg);
+            window.location.href = "#/"
+          }else{
+            layer.msg(res.msg);
+          }
+        }
+      });
+    });
+
+
+  });
+</script>
+<style scoped>
+  .height-type2 {
+    min-height: 48px;
+  }
+
+  .layui-inline {
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+
+  .input-tiele {
+    float: left;
+    line-height: 38px;
+  }
+
+  .layui-input-inline {
+    margin-right: 10px;
+  }
+
+  .search-box input {
+    width: 166px;
+  }
+
+  .layui-form-mid {
+    float: none;
+    display: inline-block;
+    margin-left: -4px;
+    margin-right: 6px;
+  }
+
+  .special-btn2 {
+    margin-top: -5px;
+    margin-left: 5px;
+  }
+</style>

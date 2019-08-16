@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>后台管理</title>
+  <!-- build:css -->
+  <link rel="stylesheet" href="lib/layui/css/layui.css">
+  <link rel="stylesheet" href="css/theme/default.css" id="theme">
+  <link rel="stylesheet" href="css/nprogress.css">
+  <style>
+    .clearfix:before,
+    .clearfix:after{
+        content: " ";
+        display: table
+    }
+    .clearfix:after{
+        clear: both
+    }
+    .layui-table-cell{
+      padding: 0 2px;
+    }
+  </style>
+  <!-- endbuild -->
+</head>
+
+<body class="layui-layout-body kit-theme-default">
+  <div class="layui-layout layui-layout-admin">
+    <!-- header -->
+    <div class="layui-header">
+      <div class="layui-logo">
+        <div class="layui-logo-toggle" kit-toggle="side" data-toggle="on">
+          <i class="layui-icon">&#xe65a;</i>
+        </div>
+        <div class="layui-logo-brand">
+          <a href="#/">商城管理系统</a>
+        </div>
+      </div>
+      <div class="layui-layout-right">
+        <ul class="kit-nav" lay-filter="header_right">
+          <!-- <li class="kit-item" kit-target="help">
+            <a href="javascript:;">
+              <i class="layui-icon">&#xe607;</i>
+              <span>帮助</span>
+            </a>
+          </li>
+          <li class="kit-item" id="ccleft">
+            <a href="javascript:;">
+              <i class="layui-icon">&#xe60e;</i>
+            </a>
+          </li>
+          <li class="kit-item" id="cc">
+            <a href="javascript:;">
+              <i class="layui-icon">&#xe64c;</i>
+            </a>
+          </li> -->
+          <li class="kit-item">
+            <a href="javascript:;">
+              <span>
+                <img src="img/photo.png" class="layui-nav-img"><b id="runminUserName"></b>
+              </span>
+            </a>
+            <ul class="kit-nav-child kit-nav-right">
+              <li class="kit-item">
+                <a href="#/user/editLoginPwd">
+                  <i class="layui-icon">&#xe612;</i>
+                  <span>修改登录密码</span>
+                </a>
+              </li>
+              <!-- <li class="kit-item" kit-target="setting">
+                <a href="javascript:;">
+                  <i class="layui-icon">&#xe614;</i>
+                  <span>设置</span>
+                </a>
+              </li> -->
+              <li class="kit-nav-line"></li>
+              <li class="kit-item">
+                <a id="userLogout" href="javascript:;">
+                  <i class="layui-icon">&#x1006;</i>
+                  <span>退出</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <!-- silds -->
+    <div class="layui-side" kit-side="true">
+      <div class="layui-side-scroll">
+        <div id="menu-box">
+          <ul class="kit-menu">
+            <li class="kit-menu-item layui-show">
+              <a href="javascript:;">
+                <i class="layui-icon"></i>
+                <span>渠道结算</span>
+              </a>
+              <ul class="kit-menu-child layui-anim layui-anim-upbit">
+               
+                <li class="kit-menu-item">
+                  <a href="#/qudao">
+                    <i class="layui-icon">&#xe623;</i>
+                    <span>财务渠道结算</span>
+                  </a>
+                </li>
+                <li class="kit-menu-item">
+                  <a href="#/qudao1">
+                    <i class="layui-icon">&#xe623;</i>
+                    <span>审核渠道结算</span>
+                  </a>
+                </li>
+                <li class="kit-menu-item">
+                  <a href="#/qudao2">
+                    <i class="layui-icon">&#xe623;</i>
+                    <span>预订渠道结算</span>
+                  </a>
+                </li>
+                <li class="kit-menu-item">
+                  <a href="#/qudao3">
+                    <i class="layui-icon">&#xe623;</i>
+                    <span>客服渠道结算</span>
+                  </a>
+                </li>
+
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- main -->
+    <div class="layui-body" kit-body="true">
+      <router-view></router-view>
+    </div>
+    <!-- footer -->
+    <div class="layui-footer" kit-footer="true">
+      2018 © 润民(中国)控股集团 版权所有
+      <div style="width:400px; height:400px;" class="load-container load1">
+        <div class="loader">Loading...</div>
+      </div>
+    </div>
+  </div>
+  <!-- build:js -->
+  <script src="lib/polyfill.min.js"></script>
+  <script src="lib/layui/layui.js"></script>
+  <script src="mockjs/mockjs-config.js"></script>
+  <!-- endbuild -->
+  <script src="js/echarts.min.js"></script>
+  <script src="js/china.js"></script>
+  <script src="js/wangEditor.js"></script>
+  <!-- build:use -->
+  <script type="text/javascript">
+    var storage = window.localStorage;
+    var token = storage.token;
+
+    if(!token || !storage.userName){
+      window.location.href = 'temp/login.html';
+    }
+
+    function createTime(v){
+      var date = new Date(v*1000);
+      var y = date.getFullYear();
+      var m = date.getMonth()+1;
+      m = m<10?'0'+m:m;
+      var d = date.getDate();
+      d = d<10?("0"+d):d;
+      var h = date.getHours();
+      h = h<10?("0"+h):h;
+      var M = date.getMinutes();
+      M = M<10?("0"+M):M;
+      var s = date.getSeconds();
+      s = s<10?("0"+s):s;
+      var str = y+"-"+m+"-"+d+" "+h+":"+M+":"+s;
+      return str;
+    }
+
+    function getParams(param){
+      var url = window.location.href.split("?")[1];
+      if (url == "" || url == undefined) return url;
+      url = url.split(param + "=")[1];
+      if (url == "" || url == undefined) {
+          url = "";
+          return url;
+      }
+      if (url.indexOf("&") > 0) {
+          url = url.split("&")[0];
+      }
+      return url;
+    }
+    // 辅助函数
+    var Helper = function(){
+      this.config = {
+        version: "1.0.0"
+      }
+    }
+    // 返回日期
+    Helper.prototype.backTempToTime = function (v) {
+      var date = new Date(v);
+      var y = date.getFullYear();
+      var m = date.getMonth()+1;
+      m = m<10?'0'+m:m;
+      var d = date.getDate();
+      d = d<10?("0"+d):d;
+      var str = y+"-"+m+"-"+d;
+      return str;
+    }
+    // 获取地址栏参数
+    Helper.prototype.getQueryString = function(name) {
+      let tstr = window.location.href;
+      let index = tstr.indexOf('?')
+      let str = tstr.substring(index + 1);
+      let arr = str.split('&');
+      let result = {};
+      arr.forEach((item) => {
+          let a = item.split('=');
+          result[a[0]] = a[1];
+      })
+      return result[name];
+   }
+   window.helper = new Helper();
+   console.log(helper);
+
+  </script>
+  <script>
+    layui.config({
+      base: '../js/'
+    }).use(['jquery', 'admin', 'menu', 'api', 'form', 'layer'], function() {
+      var $ = layui.jquery,
+        Api = layui.api,
+        form = layui.form,
+        layer = layui.layer;
+
+      var leftMenu = [];
+      // $.ajax({
+      //   url: Api.interface.adminNavList,
+      //   type: 'post',
+      //   contentType: 'application/x-www-form-urlencoded',
+      //   dataType: 'json',
+      //   async: true,
+      //   cache: false,
+      //   data: {token:token},
+      //   success: function(resultData) {
+      //     //回调函数
+      //     if (resultData.code == "0") {
+      //       var data = resultData.data;
+      //       var len = data.length;
+      //       var htmlStr = '';
+      //       for(var i = 0;i < len;i++){
+      //         htmlStr += '<li class="kit-menu-item parentLi'+(i==1?' layui-show':'')+'">';
+      //         htmlStr += '<a href="javascript:;"><i class="layui-icon"></i><span>'+data[i].title+'</span></a>';
+      //         if(data[i].children.length > 0){
+      //           htmlStr += '<ul class="kit-menu-child layui-anim layui-anim-upbit">';
+      //           for(var j = 0;j < data[i].children.length;j++){
+      //             htmlStr += '<li class="kit-menu-item childLi'+(i==1&&j==0?' layui-this':'')+'"><a href="#'+data[i].children[j].url+'"><i class="layui-icon">&#xe623;</i><span>'+data[i].children[j].title+'</span></a></li>';
+      //           }
+      //           htmlStr += '</ul>';
+      //         }
+      //         htmlStr += '</li>';
+      //       }
+      //       $('.kit-menu').html(htmlStr);
+      //       $('.parentLi').on('click',function(){
+      //         var isMenuShow = $(this).hasClass('layui-show');
+      //         if(isMenuShow){
+      //           $(this).removeClass('layui-show');
+      //         }else{
+      //           $('.parentLi').removeClass('layui-show');
+      //           $(this).addClass('layui-show');
+      //         }
+      //       })
+      //       $('.childLi').on('click',function(e){
+      //         $('.childLi').removeClass('layui-this');
+      //         $(this).addClass('layui-this');
+      //         e.stopPropagation();
+      //       })
+      //     } else {
+      //       layer.msg(resultData.message);
+      //     }
+      //   },
+      //   error: function() {}
+      // })
+
+      //显示用户名
+      $('#runminUserName').text(storage.userName);
+      
+      //退出登录
+      $('#userLogout').on('click',function(){
+        $.ajax({
+          url: Api.interface.adminLogout,
+          type: 'post',
+          contentType: 'application/x-www-form-urlencoded',
+          dataType: 'json',
+          async: true,
+          cache: false,
+          data: {"token":token},
+          success: function(resultData) {
+            //回调函数
+            if (resultData.code == "0") {
+              var storage = window.localStorage;
+              storage.token = '';
+              storage.userName = '';
+              window.location.href = 'temp/login.html';
+            } else {
+              layer.msg(resultData.message);
+            }
+          },
+          error: function() {}
+        })
+      })
+
+    });
+  </script>
+  <!-- endbuild -->
+</body>
+
+</html>

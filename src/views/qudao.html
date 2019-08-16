@@ -1,0 +1,478 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">渠道结算</div>
+    <div class="layui-card-body">
+      <div id="piglist-search-box" class="search-box layui-form height-type2">
+        <div class="layui-inline">
+          <div class="input-tiele">用户名：</div>
+          <div class="layui-input-inline">
+            <input type="text" name="userName" id="userName" lay-filter="userName" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <div class="input-tiele">手机号：</div>
+          <div class="layui-input-inline">
+            <input type="text" name="userPhone" id="userPhone" lay-filter="userPhone" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <div class="input-tiele">时间：</div>
+          <div class="layui-input-inline">
+            <input type="text" name="startTime" id="startTime" lay-verify="date" placeholder="yyyy-mm-dd HH:mm:ss"
+              autocomplete="off" class="layui-input">
+          </div>
+          <div class="layui-form-mid">-</div>
+          <div class="layui-input-inline">
+            <input type="text" name="endTime" id="endTime" lay-verify="date" placeholder="yyyy-mm-dd HH:mm:ss"
+              autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <div class="input-tiele">渠道：</div>
+          <div class="layui-input-inline">
+            <select name="qudaoType" id="qudaoType" lay-filter="qudaoType">
+              <option value="null" selected>全部</option>
+            </select>
+          </div>
+        </div>
+        <div class="layui-inline">
+          <div class="input-tiele">结算状态：</div>
+          <div class="layui-input-inline">
+            <select name="orderStatus" id="orderStatus" lay-filter="orderStatus">
+              <option value="null" selected>全部</option>
+              <option value="settled">已结算</option>
+              <option value="notSettled">待结算</option>
+            </select>
+          </div>
+        </div>
+        <button class="layui-btn special-btn2" id="deallogSearch" data-type="reload">查询</button>
+      </div>
+      <table class="layui-hide" id="qudaoTable" lay-filter="qudaoTable"></table>
+    </div>
+  </div>
+</div>
+<script type="text/html" id="qudaoTabbar">
+  <button class="layui-btn layui-btn-sm layui-btn-radius layui-btn-normal" lay-event="forThree">前三天</button>
+  <button class="layui-btn layui-btn-sm layui-btn-radius layui-btn-warm" lay-event="forTwo">前两天</button>
+  <button class="layui-btn layui-btn-sm layui-btn-radius layui-btn-danger" lay-event="forOne">前一天</button>
+  <button class="layui-btn layui-btn-sm " lay-event="export">导出数据</button>
+</script>
+<script type="text/html" id="settledAction">
+  {{# if(d.settlementCode == "notSettled") { }}
+    <button class="layui-btn layui-btn-xs" lay-event="settled">结算</button>
+  {{# }else { }}
+    --
+  {{# } }}
+</script>
+<script>
+  //Demo
+  layui.config({
+    base: './js/'
+  }).use(['jquery', 'api', 'table', 'form', 'laydate', 'laypage'], function () {
+    var $ = layui.jquery,
+      Api = layui.api,
+      table = layui.table,
+      form = layui.form,
+      layer = layui.layer,
+      laydate = layui.laydate,
+      laypage = layui.laypage;
+
+    // 判断是否显示是审核列表字段
+    var settlementCode = "";
+    // 判断是否显示是流水号列表字段
+    var payOrderSn = "";
+    //日期
+    var date = new Date();
+    date.setDate(1);
+    date.setHours(0, 0, 0, 0);
+    laydate.render({
+      elem: '#startTime',
+      format: "yyyy-MM-dd HH:mm:ss",
+      value: date,
+      type: 'datetime'
+    });
+    laydate.render({
+      elem: '#endTime',
+      format: "yyyy-MM-dd HH:mm:ss",
+      value: new Date(),
+      type: 'datetime'
+    });
+
+    // 获取渠道列表
+    $.ajax({
+      type: "post",
+      url: Api.interface.enterpriseSpread,
+      data: {
+        token: token
+      },
+      dataType: "json",
+      success: function (res) {
+        var htmlStr = "";
+        if (res.status == 200 && res.data.referrerKey.length > 0) {
+          htmlStr += `<option value="null" select>全部</option>`;
+          for (let i = 0; i < res.data.referrerKey.length; i++) {
+            const element = res.data.referrerKey[i];
+            htmlStr += `<option value="${element}">${element}</option>`;
+          }
+          $("#qudaoType").html(htmlStr);
+        }
+        form.render();
+      }
+    });
+
+    // 时间约束 ，0:默认值 1：前一天，2：前两天，3：前三天 ,
+    var nearTime = 0;
+    // 数据总条数
+    var count = 0;
+    //第一个实例
+    table.render({
+      done: function (res) {
+        $('#qudaoTable').next().css('height', 'auto');
+        console.log(res);
+        count = res.count;
+        // if (res.data.length > 0) {
+        //   payOrderSn = res.data[0].payOrderSn;
+        //   settlementCode = res.data[0].settlementCode;
+
+        //   if(payOrderSn == "" || payOrderSn == null){
+        //     $("[data-field=payOrderSn]").addClass("layui-hide").css('display','none');;
+        //   }
+        //   if(settlementCode == "" || settlementCode == null){
+        //     $("[data-field=settlementCode]").addClass("layui-hide").css('display','none');;
+        //   }
+
+        // }
+      },
+      elem: '#qudaoTable',
+      limit: 10,
+      method: 'post',
+      contentType: 'application/json; charset=UTF-8',
+      url: Api.interface.enterpriseListFinance, //数据接口
+      request: {
+        pageName: 'pageIndex',
+        limitName: 'pageSize'
+      },
+      where: {
+        "token": token,
+        "nearTime": nearTime,
+      },
+      page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+        layout: ['prev', 'page', 'next', 'skip', 'count']
+      },
+      cols: [
+        [{
+            title: "序号",
+            type: "numbers"
+          },
+          {
+            field: 'orderSn',
+            title: '订单号',
+            align: 'center',
+            width: 250
+          },
+          {
+            field: 'payOrderSn',
+            title: '流水号',
+            align: 'center',
+            width: 380
+          },
+          {
+            field: 'realName',
+            title: '姓名',
+            align: 'center',
+            width: 100
+          },
+          {
+            field: 'loginName',
+            title: '手机号',
+            align: 'center',
+            width: 150
+          },
+          {
+            field: 'idCard',
+            title: '身份证',
+            align: 'center',
+            width: 250
+          },
+          {
+            field: 'referrerKey',
+            title: '渠道',
+            align: 'center'
+          },
+          {
+            field: 'sumPrice',
+            title: '订单金额',
+            align: 'center'
+          },
+          {
+            field: 'commission',
+            title: '费用',
+            align: 'center'
+          },
+          {
+            field: 'addTime',
+            title: '时间',
+            align: 'center',
+            templet: function (row) {
+              return createTime(row.addTime);
+            }
+          },
+          {
+            field: 'createTime',
+            title: '注册时间',
+            align: 'center',
+            templet: function (row) {
+              return createTime(row.createTime);
+            }
+          },
+        ]
+      ],
+      parseData: function (res) { //res 即为原始返回的数据
+        if (res.status == 200) {
+          return {
+            "status": res.status,
+            "msg": res.msg,
+            "count": res.data.totalCount, //解析数据长度
+            "data": res.data.list //解析数据列表
+          };
+        } else if(res.status == 401){
+          layer.msg(res.msg);
+          setTimeout(() => {
+            window.location.href = "/temp/login.html"
+          }, 1000);
+        }else if(res.status == 402){
+          layer.msg(res.msg);
+          window.location.href = "#/"
+        }
+      },
+      response: {
+        statusName: "status",
+        statusCode: "200",
+      },
+      id: 'tableReload',
+      toolbar: "#qudaoTabbar",
+      defaultToolbar: []
+    });
+
+    //表格数据重载
+    var $ = layui.$,
+      active = {
+        reload: function () {
+          var userName = $('#userName').val();
+          var userPhone = $('#userPhone').val();
+          var orderStatus = $('#orderStatus').val();
+          var qudaoType = $('#qudaoType').val();
+          var applyTimeFrom = $('#startTime').val();
+          var applyTimeTo = $('#endTime').val();
+          //执行重载
+          table.reload('tableReload', {
+            page: {
+              curr: 1 //重新从第 1 页开始
+            },
+            where: {
+              realName: userName,
+              phone: userPhone,
+              nearTime: nearTime,
+              referrerKey: qudaoType == 'null' ? null : qudaoType, // 渠道
+              settlementCode: orderStatus == 'null' ? null : orderStatus, // 状态
+              addTimeStart: new Date(applyTimeFrom).getTime() / 1000 || '',
+              addTimeEnd: new Date(applyTimeTo).getTime() / 1000 || ''
+            }
+          });
+        }
+      };
+
+
+    //搜索
+    $('#deallogSearch').on('click', function () {
+      var type = $(this).data('type');
+      nearTime = 0;
+      active[type] ? active[type].call(this) : '';
+    });
+
+
+    //监听事件
+    table.on('toolbar(qudaoTable)', function (obj) {
+      var checkStatus = table.checkStatus(obj.config.id);
+      var date = new Date();
+      date.setHours(0, 0, 0, 0);
+      var one = date - 1000 * 60 * 60 * 24;
+      var two = date - 1000 * 60 * 60 * 24 * 2;
+      var three = date - 1000 * 60 * 60 * 24 * 3;
+      var date1 = new Date();
+      date1.setHours(24, 0, 0, 0);
+      switch (obj.event) {
+        case 'forOne':
+          nearTime = 1;
+          laydate.render({
+            elem: '#startTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(one),
+            type: 'datetime'
+          });
+          laydate.render({
+            elem: '#endTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(date1),
+            type: 'datetime'
+          });
+
+          active.reload();
+          break;
+        case 'forTwo':
+          nearTime = 2;
+          laydate.render({
+            elem: '#startTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(two),
+            type: 'datetime'
+          });
+          laydate.render({
+            elem: '#endTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(date1),
+            type: 'datetime'
+          });
+          active.reload();
+          break;
+        case 'forThree':
+          nearTime = 3;
+          laydate.render({
+            elem: '#startTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(three),
+            type: 'datetime'
+          });
+          laydate.render({
+            elem: '#endTime',
+            format: "yyyy-MM-dd HH:mm:ss",
+            value: new Date(date1),
+            type: 'datetime'
+          });
+          active.reload();
+          break;
+        case 'export':
+
+          // 判断是否在一个月之内
+          var userName = $('#userName').val();
+          var userPhone = $('#userPhone').val();
+          var orderStatus = $('#orderStatus').val();
+          var qudaoType = $('#qudaoType').val();
+          var applyTimeFrom = $('#startTime').val();
+          var applyTimeTo = $('#endTime').val();
+          var g = Math.floor((new Date(applyTimeTo).getTime() - new Date(applyTimeFrom).getTime()) / (24 * 3600 *
+            1000));
+          console.log(g);
+          if (g >= 30) {
+            layer.msg("请选择30天之内的数据导出")
+            return;
+          }
+          $.ajax({
+            type: "post",
+            url: Api.interface.enterpriseListFinance,
+            data: JSON.stringify({
+              "addTimeEnd": new Date(applyTimeTo).getTime() / 1000,
+              "addTimeStart": new Date(applyTimeFrom).getTime() / 1000,
+              "nearTime": 0,
+              "pageIndex": 1,
+              "pageSize": count,
+              "phone": userPhone,
+              "realName": userName,
+              "referrerKey": qudaoType == 'null' ? null : qudaoType, // 渠道
+              "settlementCode": orderStatus == 'null' ? null : orderStatus, // 状态
+              "token": token
+            }),
+            dataType: "json",
+            contentType: 'application/json; charset=UTF-8',
+            success: function (response) {
+              if (response.status == 200) {
+                var allList = [];
+                var list = [];
+                for (let i = 0; i < response.data.list.length; i++) {
+                  const objs = response.data.list[i];
+                  list = [];
+                  list.push(i + 1);
+                  list.push(objs.orderSn + "\t");
+                  list.push(objs.payOrderSn + "\t");
+                  list.push(objs.realName);
+                  list.push(objs.loginName + "\t");
+                  list.push(objs.idCard + "\t");
+                  list.push(createTime(objs.createTime) + "\t");
+                  list.push(objs.referrerKey);
+                  list.push(objs.sumPrice);
+                  list.push(createTime(objs.addTime) + "\t");
+                  list.push(objs.commission);
+                  allList.push(list);
+                }
+                table.exportFile(["序号", "订单号", "流水号", "姓名", "手机号", "身份证","注册时间", "渠道", "订单金额", "预订时间" , "费用"],
+                  allList, "csv");
+
+              } else {
+                layer.msg(response.msg);
+              }
+            }
+          });
+
+          break;
+      };
+    });
+
+    table.on('tool(qudaoTable)', function (obj) {
+      // 结算
+      if (obj.event == "settled") {
+        $.ajax({
+          type: "post",
+          url: Api.interface.enterpriseSettlement,
+          data: JSON.stringify({
+            token: token,
+            settlementCode: "settled",
+            orderSn: obj.data.orderSn
+          }),
+          dataType: "json",
+          contentType: 'application/json; charset=UTF-8',
+          success: function (res) {
+            if (res.status == 200) {
+              layer.msg(res.msg);
+              active.reload();
+            }
+          }
+        });
+      }
+    })
+  });
+</script>
+<style scoped>
+  .height-type2 {
+    min-height: 48px;
+  }
+
+  .layui-inline {
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+
+  .input-tiele {
+    float: left;
+    line-height: 38px;
+  }
+
+  .layui-input-inline {
+    margin-right: 10px;
+  }
+
+  .search-box input {
+    width: 166px;
+  }
+
+  .layui-form-mid {
+    float: none;
+    display: inline-block;
+    margin-left: -4px;
+    margin-right: 6px;
+  }
+
+  .special-btn2 {
+    margin-top: -5px;
+    margin-left: 5px;
+  }
+</style>
